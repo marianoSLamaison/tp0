@@ -18,9 +18,10 @@ void* serializar_paquete(t_paquete* paquete, int bytes)
 
 int crear_conexion(char *ip, char* puerto)
 {
+	//sacamos las estructuras basicas para el trabajo
 	struct addrinfo hints;
 	struct addrinfo *server_info;
-
+	//las inicializamos en 0 por precaucion, y luego seteamos valores
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
@@ -31,33 +32,54 @@ int crear_conexion(char *ip, char* puerto)
 	// Ahora vamos a crear el socket.
 	int socket_cliente = 0;
 
+	socket_cliente = socket(server_info->ai_family, server_info->ai_socktype, server_info->ai_protocol);
 	// Ahora que tenemos el socket, vamos a conectarlo
 
-
-	freeaddrinfo(server_info);
+	connect(socket_cliente, server_info->ai_addr, server_info->ai_addrlen);
+	freeaddrinfo(server_info);//liberamos la info inecesaria
 
 	return socket_cliente;
 }
 
-void enviar_mensaje(char* mensaje, int socket_cliente)
-{
-	t_paquete* paquete = malloc(sizeof(t_paquete));
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <errno.h>
 
-	paquete->codigo_operacion = MENSAJE;
-	paquete->buffer = malloc(sizeof(t_buffer));
-	paquete->buffer->size = strlen(mensaje) + 1;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
+void enviar_mensaje(char* mensaje, int socket_cliente) {
+    t_paquete* paquete = malloc(sizeof(t_paquete));
 
-	int bytes = paquete->buffer->size + 2*sizeof(int);
+    paquete->codigo_operacion = MENSAJE;
+    paquete->buffer = malloc(sizeof(t_buffer));
+    paquete->buffer->size = strlen(mensaje) + 1;
+    paquete->buffer->stream = malloc(paquete->buffer->size);
+    memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
 
-	void* a_enviar = serializar_paquete(paquete, bytes);
+    int bytes = paquete->buffer->size + 2 * sizeof(int);
 
-	send(socket_cliente, a_enviar, bytes, 0);
+    void* a_enviar = serializar_paquete(paquete, bytes);
+    printf("el tamaño del mensaje a enviar es = %lu\n", strlen(mensaje) + 1);
 
-	free(a_enviar);
-	eliminar_paquete(paquete);
+    ssize_t result = send(socket_cliente, a_enviar, bytes, 0);
+    if (result == -1) {
+        perror("send");
+        if (errno == EPIPE) {
+            // Handle the broken pipe error here
+            fprintf(stderr, "Error: Broken pipe. Connection closed by the peer.\n");
+            // You may want to close the socket and clean up here
+            close(socket_cliente);
+        }
+    } else {
+        puts("Mensaje enviado correctamente.");
+    }
+
+    free(a_enviar);
+    eliminar_paquete(paquete);
 }
+
 
 
 void crear_buffer(t_paquete* paquete)

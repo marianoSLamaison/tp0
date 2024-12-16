@@ -5,9 +5,9 @@ t_log* logger;
 int iniciar_servidor(void)
 {
 	// Quitar esta línea cuando hayamos terminado de implementar la funcion
-	assert(!"no implementado!");
+	//assert(!"no implementado!");
 
-	int socket_servidor;
+	int socket_servidor, ret;
 
 	struct addrinfo hints, *servinfo, *p;
 
@@ -15,19 +15,28 @@ int iniciar_servidor(void)
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
-
+	//carga los datos de un "Servicio" en una struct de info de direccion
+	//el "Servicio" se da por el socket tomado (por costumbre algunos estan tomados para ciertas cosas muy especificas)
+	//El nombre no se da, por que nosotros no nos conectamos con nadie. el resto es igual
 	getaddrinfo(NULL, PUERTO, &hints, &servinfo);
 
 	// Creamos el socket de escucha del servidor
-
+	socket_servidor = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
+	log_trace(logger, "Obtuvimos un socket receptor con id = <%i>\n", socket_servidor);
+	printf( "Obtuvimos un socket receptor con id = <%i>\n", socket_servidor);
+	puts("akñsldkalñsdkasñld");
 	// Asociamos el socket a un puerto
-
+	//la adress es la que sea apta para el tipo de socket
+	setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEPORT, &(int){1}, sizeof(int));
+	bind(socket_servidor, &servinfo->ai_addr, servinfo->ai_addrlen);
+	listen(socket_servidor, SOMAXCONN);
 	// Escuchamos las conexiones entrantes
+	ret = accept(socket_servidor, NULL, NULL);
 
-	freeaddrinfo(servinfo);
-	log_trace(logger, "Listo para escuchar a mi cliente");
-
-	return socket_servidor;
+	freeaddrinfo(servinfo);	
+	log_trace(logger, "Listo para escuchar a mi cliente\nSocket servidor : <%i>", ret);
+	//close(socket_servidor);//para evitar problemas despues lo cerramos ahora
+	return ret;
 }
 
 int esperar_cliente(int socket_servidor)
