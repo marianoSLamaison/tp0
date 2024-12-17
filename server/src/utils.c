@@ -28,25 +28,25 @@ int iniciar_servidor(void)
 	// Asociamos el socket a un puerto
 	//la adress es la que sea apta para el tipo de socket
 	setsockopt(socket_servidor, SOL_SOCKET, SO_REUSEPORT, &(int){1}, sizeof(int));
-	bind(socket_servidor, &servinfo->ai_addr, servinfo->ai_addrlen);
-	listen(socket_servidor, SOMAXCONN);
+	bind(socket_servidor, servinfo->ai_addr, servinfo->ai_addrlen);
 	// Escuchamos las conexiones entrantes
-	ret = accept(socket_servidor, NULL, NULL);
+	listen(socket_servidor, SOMAXCONN);
+	//ret = accept(socket_servidor, NULL, NULL);
 
-	freeaddrinfo(servinfo);	
-	log_trace(logger, "Listo para escuchar a mi cliente\nSocket servidor : <%i>", ret);
-	//close(socket_servidor);//para evitar problemas despues lo cerramos ahora
-	return ret;
+	freeaddrinfo(servinfo);
+	return socket_servidor;
 }
 
 int esperar_cliente(int socket_servidor)
 {
 	// Quitar esta línea cuando hayamos terminado de implementar la funcion
-	assert(!"no implementado!");
+	//assert(!"no implementado!");
 
 	// Aceptamos un nuevo cliente
-	int socket_cliente;
-	log_info(logger, "Se conecto un cliente!");
+	int socket_cliente = accept(socket_servidor, NULL, NULL);
+	log_info(logger, "Se conecto un cliente! con codigo de socket:%i", socket_cliente);
+	//recibimos su mensaje de coneccion
+	//recibir_mensaje(socket_cliente);
 
 	return socket_cliente;
 }

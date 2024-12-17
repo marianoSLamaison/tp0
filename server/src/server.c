@@ -6,7 +6,7 @@ int main(void) {
 	int server_fd = iniciar_servidor();
 	log_info(logger, "Servidor listo para recibir al cliente");
 	int cliente_fd = esperar_cliente(server_fd);
-
+	log_trace(logger, "Se conecto el cliente con ID:%i", cliente_fd);
 	t_list* lista;
 	while (1) {
 		int cod_op = recibir_operacion(cliente_fd);
